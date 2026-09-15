@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Währungsrechner</title>
+  
+  <!-- iOS App-Modus aktivieren -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kurse">
+
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-color: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-color: #38bdf8;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 400px;
+      margin-top: 20px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+
+    .currency-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .flag {
+      font-size: 1.8rem;
+    }
+
+    .code {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .name {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .rate {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--accent-color);
+    }
+
+    .btn-refresh {
+      background-color: var(--accent-color);
+      color: #0f172a;
+      border: none;
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: opacity 0.2s;
+    }
+
+    .btn-refresh:active {
+      opacity: 0.7;
+    }
+
+    .updated {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Tageskurse (1 EUR)</h1>
+
+    <div id="rates-list">
+      <!-- Kurse werden hier dynamisch eingefügt -->
+    </div>
+
+    <button class="btn-refresh" onclick="fetchRates()">Aktualisieren</button>
+    <div class="updated" id="last-updated">Lade Daten...</div>
+  </div>
+
+  <script>
+    // Liste der gewünschten Zielwährungen
+    const currencies = [
+      { code: 'USD', name: 'US-Dollar', flag: '🇺🇸' },
+      { code: 'CHF', name: 'Schweizer Franken', flag: '🇨🇭' },
+      { code: 'GBP', name: 'Britisches Pfund', flag: '🇬🇧' },
+      { code: 'NOK', name: 'Norwegische Krone', flag: '🇳🇴' }
+    ];
+
+    async function fetchRates() {
+      const updatedEl = document.getElementById('last-updated');
+      updatedEl.innerText = "Aktualisiere...";
+
+      try {
+        // Kostenlose API ohne API-Key (Basis: EUR)
+        const response = await fetch('https://open.er-api.com/v6/latest/EUR');
+        const data = await response.json();
+
+        if (data.result === "success") {
+          renderRates(data.rates);
+          const now = new Date();
+          updatedEl.innerText = "Zuletzt aktualisiert: " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else {
+          updatedEl.innerText = "Fehler beim Laden der Daten.";
+        }
+      } catch (error) {
+        updatedEl.innerText = "Netzwerkfehler. Bitte Verbindung prüfen.";
+      }
+    }
+
+    function renderRates(rates) {
+      const listEl = document.getElementById('rates-list');
+      listEl.innerHTML = '';
+
+      currencies.forEach(c => {
+        const rateValue = rates[c.code] ? rates[c.code].toFixed(4) : 'N/A';
+        
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="currency-info">
+            <span class="flag">${c.flag}</span>
+            <div>
+              <div class="code">${c.code}</div>
+              <div class="name">${c.name}</div>
+            </div>
+          </div>
+          <div class="rate">${rateValue}</div>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    // Beim Start automatisch laden
+    fetchRates();
+  </script>
+</body>
+</html>
